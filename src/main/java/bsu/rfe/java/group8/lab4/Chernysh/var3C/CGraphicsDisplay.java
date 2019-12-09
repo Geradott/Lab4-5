@@ -129,16 +129,10 @@ public class CGraphicsDisplay extends JPanel {
     }
 
     private void paintMarkers(Graphics2D canvas) {
-
         canvas.setStroke(markerStroke);
-        for (Double[] point : dArrGraphicsData) {
+        for (int i = 1; i < dArrGraphicsData.length; i++) {
             canvas.setStroke(axisStroke);
-            int res = Math.abs(point[1].intValue()), sum = 0;
-            while (res > 0) {
-                sum += res % 10;
-                res = res / 10;
-            }
-            if (sum < 10) {
+            if (dArrGraphicsData[i][1] > dArrGraphicsData[i - 1][1]) {
                 canvas.setColor(Color.BLACK);
                 canvas.setPaint(Color.BLACK);
             } else {
@@ -146,7 +140,7 @@ public class CGraphicsDisplay extends JPanel {
                 canvas.setPaint(Color.RED);
             }
             Ellipse2D.Double marker = new Ellipse2D.Double();
-            Point2D.Double center = xyToPoint(point[0], point[1]);
+            Point2D.Double center = xyToPoint(dArrGraphicsData[i][0], dArrGraphicsData[i][1]);
             Point2D.Double corner = shiftPoint(center, 5, 5);
             marker.setFrameFromCenter(center, corner);
             canvas.draw(marker);
