@@ -1,5 +1,6 @@
 package bsu.rfe.java.group8.lab4.Chernysh.var3C;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -133,11 +134,11 @@ public class CGraphicsDisplay extends JPanel {
         for (int i = 1; i < dArrGraphicsData.length; i++) {
             canvas.setStroke(axisStroke);
             if (dArrGraphicsData[i][1] > dArrGraphicsData[i - 1][1]) {
-                canvas.setColor(Color.BLACK);
+                canvas.setColor(Color.RED);
                 canvas.setPaint(Color.BLACK);
             } else {
-                canvas.setColor(Color.RED);
-                canvas.setPaint(Color.RED);
+                canvas.setColor(Color.BLACK);
+                canvas.setPaint(Color.BLACK);
             }
             Ellipse2D.Double marker = new Ellipse2D.Double();
             Point2D.Double center = xyToPoint(dArrGraphicsData[i][0], dArrGraphicsData[i][1]);
@@ -201,4 +202,3 @@ public class CGraphicsDisplay extends JPanel {
         return dest;
     }
 }
-

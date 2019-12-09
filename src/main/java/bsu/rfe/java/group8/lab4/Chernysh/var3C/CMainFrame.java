@@ -19,12 +19,13 @@ public class CMainFrame extends JFrame {
     private JCheckBoxMenuItem showAxisMenuItem;
     private JCheckBoxMenuItem showMarkersMenuItem;
     private JCheckBoxMenuItem rotatesMenuItem;
+    private JMenuItem secondGraph;
     private CGraphicsDisplay display = new CGraphicsDisplay();
     private boolean fileLoaded = false;
 
     private CMainFrame() {
         super("Plotting graphs");
-        setSize(WIDTH, HEIGHT);
+        setSize(iFWidth, iFHeight);
         Toolkit kit = Toolkit.getDefaultToolkit();
         setLocation((kit.getScreenSize().width - iFWidth) / 2, (kit.getScreenSize().height - iFHeight) / 2);
         setExtendedState(MAXIMIZED_BOTH);
@@ -40,8 +41,9 @@ public class CMainFrame extends JFrame {
                     fileChooser = new JFileChooser();
                     fileChooser.setCurrentDirectory(new File("."));
                 }
-                if (fileChooser.showOpenDialog(CMainFrame.this) == JFileChooser.APPROVE_OPTION)
+                if (fileChooser.showOpenDialog(CMainFrame.this) == JFileChooser.APPROVE_OPTION) {
                     openGraphics(fileChooser.getSelectedFile());
+                }
             }
          };
         fileMenu.add(openGraphicsAction);
@@ -75,6 +77,21 @@ public class CMainFrame extends JFrame {
         graphicsMenu.add(rotatesMenuItem);
         rotatesMenuItem.setSelected(false);
         
+        Action addSecondGraph = new AbstractAction("Second graph") {
+            public void actionPerformed(ActionEvent event) {
+                if (fileChooser == null) {
+                    fileChooser = new JFileChooser();
+                    fileChooser.setCurrentDirectory(new File("."));
+                }
+                if (fileChooser.showOpenDialog(CMainFrame.this) == JFileChooser.APPROVE_OPTION) {
+                    openGraphics(fileChooser.getSelectedFile());
+                }
+            }
+        };
+        secondGraph = new JMenuItem(addSecondGraph);
+        graphicsMenu.add(secondGraph);
+        showMarkersMenuItem.setEnabled(false);
+        
         graphicsMenu.addMenuListener(new GraphicsMenuListener());
         getContentPane().add(display, BorderLayout.CENTER);
         }
@@ -83,7 +100,6 @@ public class CMainFrame extends JFrame {
         try {
             DataInputStream in = new DataInputStream(new FileInputStream(selectedFile));
             Double[][] graphicsData = new Double[in.available() / (Double.SIZE / 8) / 2][];
-
             int i = 0;
             while (in.available() > 0) {
                 double x = in.readDouble();
@@ -110,6 +126,7 @@ public class CMainFrame extends JFrame {
 
     private class GraphicsMenuListener implements MenuListener {
         public void menuSelected(MenuEvent e) {
+            secondGraph.setEnabled(fileLoaded);
             showAxisMenuItem.setEnabled(fileLoaded);
             showMarkersMenuItem.setEnabled(fileLoaded);
             rotatesMenuItem.setEnabled(fileLoaded);
