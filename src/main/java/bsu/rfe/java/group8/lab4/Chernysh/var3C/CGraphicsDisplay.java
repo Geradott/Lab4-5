@@ -22,6 +22,8 @@ public class CGraphicsDisplay extends JPanel {
     private double dMinY;
     private double dMaxY;
     private double dScale;
+    private double dScaleX;
+    private double dScaleY;
     private BasicStroke graphicsStroke;
     private BasicStroke axisStroke;
     private BasicStroke markerStroke;
@@ -76,27 +78,54 @@ public class CGraphicsDisplay extends JPanel {
             }
         }
 
-        double dScaleX = getSize().getWidth() / (dMaxX - dMinX);
-        double dScaleY = getSize().getHeight() / (dMaxY - dMinY);
+        if (!bClockRotate) {
+            dScaleX = getSize().getWidth() / (dMaxX - dMinX);
+            dScaleY = getSize().getHeight() / (dMaxY - dMinY);
+        }
+        else {
+            dScaleX = getSize().getHeight() / (dMaxX - dMinX);
+            dScaleY = getSize().getWidth() / (dMaxY - dMinY);
+        }
         dScale = Math.min(dScaleX, dScaleY);
         if (dScale == dScaleX) {
-            double yIncrement = (getSize().getHeight() / dScale - (dMaxY - dScale)) / 2;
+            double yIncrement = 0;
+            if (!bClockRotate) {
+                yIncrement = (getSize().getWidth() / dScale - (dMaxY - dScale)) / 2;
+            }
+            else {
+                yIncrement = (getSize().getHeight() / dScale - (dMaxY - dScale)) / 2;
+            }
             dMaxY += yIncrement;
             dMinY -= yIncrement;
         }
         if (dScale == dScaleY) {
-            double xIncrement = (getSize().getWidth() / dScale - (dMaxX - dMinX)) / 2;
+            double xIncrement = 0;
+            if (!bClockRotate) {
+                xIncrement = (getSize().getWidth() / dScale - (dMaxX - dMinX)) / 2;
+            }
+            else {
+                xIncrement = (getSize().getHeight() / dScale - (dMaxX - dMinX)) / 2;
+            }
             dMaxX += xIncrement;
             dMinX -= xIncrement;
         }
 
         Graphics2D canvas = (Graphics2D) g;
+        //float alpha = 1f-(.01f*(float)opcounter);
+        //Graphics2D g2d = (Graphics2D)g.create();
+        //AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.SRC_OUT);
+        //AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.Clear);
+        canvas.setComposite(AlphaComposite.SrcOver);
+        //g2d.drawImage(img, 0, 0, null);
+        //g2d.dispose();
         Stroke oldStroke = canvas.getStroke();
         Color oldColor = canvas.getColor();
         Paint oldPaint = canvas.getPaint();
         Font oldFont = canvas.getFont();
 
         if (bClockRotate) {
+            ((Graphics2D) g).rotate(-Math.PI / 2);
+            ((Graphics2D) g).translate(-getHeight(), 0);
             paintRotate(canvas);
         }
         if (bShowAxis)
