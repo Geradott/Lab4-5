@@ -20,8 +20,10 @@ public class CMainFrame extends JFrame {
     private JCheckBoxMenuItem showMarkersMenuItem;
     private JCheckBoxMenuItem rotatesMenuItem;
     private JMenuItem secondGraph;
+    private File pathFile;
     private CGraphicsDisplay display = new CGraphicsDisplay();
     private boolean fileLoaded = false;
+    private boolean bOneMoreGraph = false;
 
     private CMainFrame() {
         super("Plotting graphs");
@@ -32,7 +34,7 @@ public class CMainFrame extends JFrame {
         
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar(menuBar);
-
+        
         JMenu fileMenu = new JMenu("File");
         menuBar.add(fileMenu);
         Action openGraphicsAction = new AbstractAction("Open file with graph") {
@@ -42,12 +44,13 @@ public class CMainFrame extends JFrame {
                     fileChooser.setCurrentDirectory(new File("."));
                 }
                 if (fileChooser.showOpenDialog(CMainFrame.this) == JFileChooser.APPROVE_OPTION) {
-                    openGraphics(fileChooser.getSelectedFile());
+                    pathFile = fileChooser.getSelectedFile();
+                    openGraphics(pathFile);
                 }
             }
          };
         fileMenu.add(openGraphicsAction);
-
+        
         JMenu graphicsMenu = new JMenu("Graph");
         menuBar.add(graphicsMenu);
          Action showAxisAction = new AbstractAction("Show axes") {
@@ -84,7 +87,8 @@ public class CMainFrame extends JFrame {
                     fileChooser.setCurrentDirectory(new File("."));
                 }
                 if (fileChooser.showOpenDialog(CMainFrame.this) == JFileChooser.APPROVE_OPTION) {
-                    openGraphics(fileChooser.getSelectedFile());
+                    bOneMoreGraph = true;
+                    openGraphics(fileChooser.getSelectedFile(), pathFile);
                 }
             }
         };
@@ -95,7 +99,7 @@ public class CMainFrame extends JFrame {
         graphicsMenu.addMenuListener(new GraphicsMenuListener());
         getContentPane().add(display, BorderLayout.CENTER);
         }
-
+    
     private void openGraphics(File selectedFile) {
         try {
             DataInputStream in = new DataInputStream(new FileInputStream(selectedFile));
@@ -117,13 +121,44 @@ public class CMainFrame extends JFrame {
             JOptionPane.showMessageDialog(CMainFrame.this, "Reading points error", "Loading error", JOptionPane.WARNING_MESSAGE);
         }
     }
-
+    
+    private void openGraphics(File selectedFile, File secondSelectedFile) {
+        try {
+            DataInputStream in = new DataInputStream(new FileInputStream(selectedFile));
+            Double[][] graphicsData = new Double[in.available() / (Double.SIZE / 8) / 2][];
+            int i = 0;
+            while (in.available() > 0) {
+                double x = in.readDouble();
+                double y = in.readDouble();
+                graphicsData[i++] = new Double[] {x, y};
+            }
+            DataInputStream ndin = new DataInputStream(new FileInputStream(secondSelectedFile));
+            Double[][] secondGraphicsData = new Double[ndin.available() / (Double.SIZE / 8) / 2][];
+            int j = 0;
+            while (ndin.available() > 0) {
+                double x = ndin.readDouble();
+                double y = ndin.readDouble();
+                secondGraphicsData[j++] = new Double[] {x, y};
+            }
+            if (graphicsData != null && graphicsData.length > 0 && secondGraphicsData != null && secondGraphicsData.length > 0) {
+                fileLoaded = true;
+                display.showGraphics(graphicsData, secondGraphicsData, bOneMoreGraph);
+            }
+            in.close();
+            ndin.close();
+        } catch (FileNotFoundException ex) {
+            JOptionPane.showMessageDialog(CMainFrame.this, "File don't exist", "Loading error", JOptionPane.WARNING_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(CMainFrame.this, "Reading points error", "Loading error", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
     public static void main(String[] args) {
         CMainFrame frame = new CMainFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
-
+    
     private class GraphicsMenuListener implements MenuListener {
         public void menuSelected(MenuEvent e) {
             secondGraph.setEnabled(fileLoaded);

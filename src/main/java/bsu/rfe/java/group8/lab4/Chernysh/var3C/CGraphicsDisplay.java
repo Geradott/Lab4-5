@@ -14,9 +14,11 @@ import javax.swing.JPanel;
 
 public class CGraphicsDisplay extends JPanel {
     private Double[][] dArrGraphicsData;
+    private Double[][] dArrSecondGraphicsData;
     private boolean bShowAxis = true;
     private boolean bShowMarkers = true;
     private boolean bClockRotate = false;
+    private boolean bOneMoreGraph = false;
     private double dMinX;
     private double dMaxX;
     private double dMinY;
@@ -39,12 +41,19 @@ public class CGraphicsDisplay extends JPanel {
                 BasicStroke.JOIN_MITER, 10.0f, null, 0.0f);
         axisFont = new Font("Serif", Font.BOLD, 36);
     }
-
+    
     void showGraphics(Double[][] graphicsData) {
         this.dArrGraphicsData = graphicsData;
         repaint();
     }
-
+    
+    void showGraphics(Double[][] graphicsData, Double[][] graphicsSecondData, boolean secondGraph) {
+        this.dArrGraphicsData = graphicsData;
+        this.dArrSecondGraphicsData = graphicsSecondData;
+        this.bOneMoreGraph = secondGraph;
+        repaint();
+    }
+        
     void setShowAxis(boolean showAxis) {
         this.bShowAxis = showAxis;
         repaint();
@@ -75,6 +84,16 @@ public class CGraphicsDisplay extends JPanel {
             }
             if (dArrGraphicsData[i][1] > dMaxY) {
                 dMaxY = dArrGraphicsData[i][1];
+            }
+        }
+        if (bOneMoreGraph) {
+            for (int i = 1; i < dArrSecondGraphicsData.length; i++) {
+                if (dArrSecondGraphicsData[i][1] < dMinY) {
+                    dMinY = dArrSecondGraphicsData[i][1];
+                }
+                if (dArrSecondGraphicsData[i][1] > dMaxY) {
+                    dMaxY = dArrSecondGraphicsData[i][1];
+                }
             }
         }
 
@@ -111,35 +130,44 @@ public class CGraphicsDisplay extends JPanel {
         }
 
         Graphics2D canvas = (Graphics2D) g;
-        //float alpha = 1f-(.01f*(float)opcounter);
-        //Graphics2D g2d = (Graphics2D)g.create();
-        //AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.SRC_OUT);
-        //AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.Clear);
-        canvas.setComposite(AlphaComposite.SrcOver);
-        //g2d.drawImage(img, 0, 0, null);
-        //g2d.dispose();
         Stroke oldStroke = canvas.getStroke();
         Color oldColor = canvas.getColor();
         Paint oldPaint = canvas.getPaint();
         Font oldFont = canvas.getFont();
 
         if (bClockRotate) {
-            ((Graphics2D) g).rotate(-Math.PI / 2);
-            ((Graphics2D) g).translate(-getHeight(), 0);
             paintRotate(canvas);
         }
         if (bShowAxis)
             paintAxis(canvas);
-        paintGraphics(canvas);
+        if (bOneMoreGraph)
+            paintSecondGraphics(canvas);
         if (bShowMarkers)
             paintMarkers(canvas);
 
+        paintGraphics(canvas);
+        
         canvas.setFont(oldFont);
         canvas.setPaint(oldPaint);
         canvas.setColor(oldColor);
         canvas.setStroke(oldStroke);
     }
-
+    
+    private void paintSecondGraphics(Graphics2D canvas) {
+        canvas.setStroke(graphicsStroke);
+        canvas.setColor(Color.RED);
+        GeneralPath graphics = new GeneralPath();
+        for (int i = 0; i < dArrSecondGraphicsData.length; i++) {
+            Point2D.Double point = xyToPoint(dArrSecondGraphicsData[i][0], dArrSecondGraphicsData[i][1]);
+            if (i > 0) {
+                graphics.lineTo(point.getX(), point.getY());
+            } else {
+                graphics.moveTo(point.getX(), point.getY());
+            }
+        }
+        canvas.draw(graphics);
+    }
+    
     private void paintGraphics(Graphics2D canvas) {
         canvas.setStroke(graphicsStroke);
         canvas.setColor(Color.RED);
@@ -156,6 +184,8 @@ public class CGraphicsDisplay extends JPanel {
     }
 
     private void paintRotate(Graphics2D canvas) {
+        canvas.rotate(-Math.PI / 2);
+        canvas.translate(-getHeight(), 0);
     }
 
     private void paintMarkers(Graphics2D canvas) {
