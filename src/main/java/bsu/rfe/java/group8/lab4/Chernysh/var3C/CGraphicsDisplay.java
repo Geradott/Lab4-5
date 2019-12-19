@@ -1,6 +1,5 @@
 package bsu.rfe.java.group8.lab4.Chernysh.var3C;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -194,7 +193,7 @@ public class CGraphicsDisplay extends JPanel {
             canvas.setStroke(axisStroke);
             if (dArrGraphicsData[i][1] > dArrGraphicsData[i - 1][1]) {
                 canvas.setColor(Color.RED);
-                canvas.setPaint(Color.BLACK);
+                canvas.setPaint(Color.RED);
             } else {
                 canvas.setColor(Color.BLACK);
                 canvas.setPaint(Color.BLACK);
@@ -206,6 +205,25 @@ public class CGraphicsDisplay extends JPanel {
             canvas.draw(marker);
             canvas.draw(new Line2D.Double(shiftPoint(center, 0, 5), shiftPoint(center, 0, -5)));
             canvas.draw(new Line2D.Double(shiftPoint(center, 5, 0), shiftPoint(center, -5, 0)));
+        }
+        if (bOneMoreGraph) {
+            for (int i = 1; i < dArrSecondGraphicsData.length; i++) {
+                canvas.setStroke(axisStroke);
+                if (dArrSecondGraphicsData[i][1] > dArrSecondGraphicsData[i - 1][1]) {
+                    canvas.setColor(Color.RED);
+                    canvas.setPaint(Color.RED);
+                } else {
+                    canvas.setColor(Color.BLACK);
+                    canvas.setPaint(Color.BLACK);
+                }
+                Ellipse2D.Double marker = new Ellipse2D.Double();
+                Point2D.Double center = xyToPoint(dArrSecondGraphicsData[i][0], dArrSecondGraphicsData[i][1]);
+                Point2D.Double corner = shiftPoint(center, 5, 5);
+                marker.setFrameFromCenter(center, corner);
+                canvas.draw(marker);
+                canvas.draw(new Line2D.Double(shiftPoint(center, 0, 5), shiftPoint(center, 0, -5)));
+                canvas.draw(new Line2D.Double(shiftPoint(center, 5, 0), shiftPoint(center, -5, 0)));
+            }
         }
     }
 
