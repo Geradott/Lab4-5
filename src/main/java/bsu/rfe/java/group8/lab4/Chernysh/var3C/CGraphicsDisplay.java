@@ -44,8 +44,9 @@ public class CGraphicsDisplay extends JPanel {
     private boolean bShowMarkers = true;
     private boolean bClockRotate = false;
     private boolean bOneMoreGraph = false;
-    private boolean bselMode = false;
-    private boolean bdragMode = false;
+    private boolean bSelMode = false;
+    private boolean bDragMode = false;
+    private boolean bZoom = false;
     private double dMinX;
     private double dMaxX;
     private double dMinY;
@@ -56,7 +57,10 @@ public class CGraphicsDisplay extends JPanel {
     private BasicStroke graphicsStroke;
     private BasicStroke axisStroke;
     private BasicStroke markerStroke;
+    private BasicStroke selStroke;
     private Font axisFont;
+    private int iMausePX = 0;
+    private int iMausePY = 0;
     private Rectangle2D.Double rect;
     private Stack<Zone> stack = new Stack<Zone>();
 
@@ -68,6 +72,8 @@ public class CGraphicsDisplay extends JPanel {
                 BasicStroke.JOIN_MITER, 10.0f, null, 0.0f);
         markerStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT,
                 BasicStroke.JOIN_MITER, 10.0f, null, 0.0f);
+	selStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, 
+                        BasicStroke.JOIN_MITER, 10.0f, new float[] { 8, 8 }, 0.0f);
         axisFont = new Font("Serif", Font.BOLD, 36);
     }
     
@@ -175,7 +181,12 @@ public class CGraphicsDisplay extends JPanel {
             paintSecondGraphics(canvas);
         if (bShowMarkers)
             paintMarkers(canvas);
-
+	if (bSelMode) {
+            canvas.setColor(Color.BLACK);
+            canvas.setStroke(selStroke);
+            canvas.draw(rect);
+	}
+                
         paintGraphics(canvas);
         
         canvas.setFont(oldFont);
@@ -213,7 +224,7 @@ public class CGraphicsDisplay extends JPanel {
         }
         canvas.draw(graphics);
     }
-
+    
     private void paintRotate(Graphics2D canvas) {
         canvas.rotate(-Math.PI / 2);
         canvas.translate(-getHeight(), 0);
@@ -311,6 +322,26 @@ public class CGraphicsDisplay extends JPanel {
         return dest;
     }
     
+    private Point2D.Double pointToXY(int x, int y) {
+	Point2D.Double p = new Point2D.Double();
+	if (!bClockRotate) {
+            p.x = x / dScale + dMinX;
+            int q = (int) xyToPoint(0, 0).y;
+            p.y = dMaxY - dMaxY * ((double) y / (double) q);
+	} 
+        else {
+            if (!bZoom) {
+		p.y = -x / dScale + dMaxY;
+                p.x = -y / dScale + dMaxX;
+		}
+            else {
+		p.y = -x / dScaleY + dMaxY;
+		p.x = -y / dScaleX + dMaxX;
+            }
+	}
+	return p;
+    }
+    
     public class MouseMotionHandler implements MouseMotionListener, MouseListener {
         public void mouseMoved (MouseEvent ev) {
             Graph graph;
@@ -327,7 +358,31 @@ public class CGraphicsDisplay extends JPanel {
         }
         
         public void mouseDragged(MouseEvent ev) {
-            
+            if (bSelMode) {
+		if (!bClockRotate)
+                    rect.setFrame(iMausePX, iMausePY, ev.getX() - rect.getX(), ev.getY() - rect.getY());
+		else {
+                    rect.setFrame(- iMausePY + getHeight(), iMausePX, -ev.getY() + iMausePY, ev.getX() - iMausePX);
+       		}			
+            repaint();
+            }
+            if (bDragMode) {
+                if (!bClockRotate) {
+                    if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y > dMinY) {
+			dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+			graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
+			graphPoint.iY = ev.getY();
+                    }
+		} 
+                else {
+                    if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y> dMinY) {
+			dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+			graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
+			graphPoint.iY = ev.getX();
+                    }
+		}
+		repaint();
+            }
         }
         public void mouseClicked(MouseEvent e) {
             throw new UnsupportedOperationException("Not supported yet.");
