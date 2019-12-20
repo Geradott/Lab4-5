@@ -2,22 +2,50 @@ package bsu.rfe.java.group8.lab4.Chernysh.var3C;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
+import java.awt.Point;
 import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.*;
 import javax.swing.JPanel;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.util.Stack;
 
 public class CGraphicsDisplay extends JPanel {
+    class Zone {
+	double dTmp;
+	double dMinY;
+        double dMaxY;
+	double dMaxX;
+	double dMinX;
+	boolean bUse;
+    }
+        
+    class Graph {
+        private double dX;
+        private double dY;
+        private int iX;
+        private int iY;
+        private int iNumb;
+    }
+        
+    private Graph graphPoint;    
+    
     private Double[][] dArrGraphicsData;
     private Double[][] dArrSecondGraphicsData;
+    private int[][] iArrGraphicsData;
     private boolean bShowAxis = true;
     private boolean bShowMarkers = true;
     private boolean bClockRotate = false;
     private boolean bOneMoreGraph = false;
+    private boolean bselMode = false;
+    private boolean bdragMode = false;
     private double dMinX;
     private double dMaxX;
     private double dMinY;
@@ -29,6 +57,8 @@ public class CGraphicsDisplay extends JPanel {
     private BasicStroke axisStroke;
     private BasicStroke markerStroke;
     private Font axisFont;
+    private Rectangle2D.Double rect;
+    private Stack<Zone> stack = new Stack<Zone>();
 
     CGraphicsDisplay() {
         setBackground(Color.WHITE);
@@ -43,6 +73,7 @@ public class CGraphicsDisplay extends JPanel {
     
     void showGraphics(Double[][] graphicsData) {
         this.dArrGraphicsData = graphicsData;
+        iArrGraphicsData = new int[graphicsData.length][2];
         repaint();
     }
     
@@ -50,6 +81,7 @@ public class CGraphicsDisplay extends JPanel {
         this.dArrGraphicsData = graphicsData;
         this.dArrSecondGraphicsData = graphicsSecondData;
         this.bOneMoreGraph = secondGraph;
+        iArrGraphicsData = new int[graphicsData.length + dArrSecondGraphicsData.length][2];
         repaint();
     }
         
@@ -277,5 +309,72 @@ public class CGraphicsDisplay extends JPanel {
         Point2D.Double dest = new Point2D.Double();
         dest.setLocation(src.getX() + deltaX, src.getY() + deltaY);
         return dest;
+    }
+    
+    public class MouseMotionHandler implements MouseMotionListener, MouseListener {
+        public void mouseMoved (MouseEvent ev) {
+            Graph graph;
+            graph = findDot(ev.getX(), ev.getY());
+            if (graph != null) {
+		setCursor(Cursor.getPredefinedCursor(8));
+		graphPoint = graph;
+            }
+            else {
+		setCursor(Cursor.getPredefinedCursor(0));
+		graphPoint = null;
+            }
+            repaint();
+        }
+        
+        public void mouseDragged(MouseEvent ev) {
+            
+        }
+        public void mouseClicked(MouseEvent e) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void mousePressed(MouseEvent e) {
+            throw new UnsupportedOperationException("Not supported yet."); 
+        }
+
+        public void mouseReleased(MouseEvent e) {
+            throw new UnsupportedOperationException("Not supported yet."); 
+        }
+
+        public void mouseEntered(MouseEvent e) {
+            throw new UnsupportedOperationException("Not supported yet."); 
+        }
+
+        public void mouseExited(MouseEvent e) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        
+        private Graph findDot (int x, int y) {
+            Graph graph1 = new Graph();
+            Graph graph2 = new Graph();
+            double r, r2 = 1000;
+            for (int i = 0; i < dArrGraphicsData.length; i++) {
+		Point p = new Point();
+		p.x = x;
+		p.y = y;
+		Point p2 = new Point();
+		p2.x = iArrGraphicsData[i][0];
+		p2.y = iArrGraphicsData[i][1];
+		r = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
+                if (r < 7.0) {
+                    graph1.iX = iArrGraphicsData[i][0];
+                    graph1.iY = iArrGraphicsData[i][1];
+                    graph1.dX = iArrGraphicsData[i][0];
+                    graph1.dY = iArrGraphicsData[i][1];
+                    graph1.iNumb = i;
+                    if (r < r2) {
+                        r2 = r;
+                        graph2 = graph1;
+                    }
+                    return graph2;
+                }
+            }
+            return null;
+        }
     }
 }
