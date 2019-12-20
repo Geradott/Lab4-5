@@ -418,8 +418,57 @@ public class CGraphicsDisplay extends JPanel {
             }
         }
 
-        public void mouseReleased(MouseEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); 
+        public void mouseReleased(MouseEvent ev) {
+            rect.setFrame(0, 0, 0, 0);
+            if (ev.getButton() != 1) {
+		repaint();
+                return;
+            }
+            if (bSelMode) {
+		if (!bClockRotate) {
+                    if (ev.getX() <= iMausePX || ev.getY() <= iMausePY)
+			return;
+		int eY = ev.getY();
+		int eX = ev.getX();
+		if (eY > getHeight())
+                    eY = getHeight();
+		if (eX > getWidth())
+                    eX = getWidth();
+		double MAXX = pointToXY(eX, 0).x;
+		double MINX = pointToXY(iMausePX, 0).x;
+		double MAXY = pointToXY(0, iMausePY).y;
+		double MINY = pointToXY(0, eY).y;
+		stack.push(zone);
+		zone = new Zone();
+		zone.bUse = true;
+		zone.dMaxX = MAXX;
+		zone.dMinX = MINX;
+		zone.dMinY = MINY;
+		zone.dMaxY = MAXY;
+		bSelMode = false;
+		bZoom = true;
+                } 
+                else {
+                    if (pointToXY(iMausePX, 0).y <= pointToXY(ev.getX(), 0).y || pointToXY(0, ev.getY()).x <= pointToXY(0, iMausePY).x)
+			return;
+                    int eY = ev.getY();
+                    int eX = ev.getX();
+                    if (eY < 0)
+                        eY = 0;
+                    if (eX > getWidth())
+                        eX = getWidth();
+                    stack.push(zone);
+                    zone = new Zone();
+                    zone.bUse = true;
+                    zone.dMaxY = pointToXY(iMausePX, 0).y;
+                    zone.dMaxX = pointToXY(0, eY).x;
+                    zone.dMinX = pointToXY(0, iMausePY).x;
+                    zone.dMinY = pointToXY(eX, 0).y;
+                    bSelMode = false;
+                    bZoom = true;
+		}
+            }
+            repaint();
         }
 
         public void mouseEntered(MouseEvent e) {
