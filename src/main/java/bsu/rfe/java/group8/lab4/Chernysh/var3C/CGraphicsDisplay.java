@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.EmptyStackException;
 import java.util.Stack;
 
 public class CGraphicsDisplay extends JPanel {
@@ -62,6 +63,7 @@ public class CGraphicsDisplay extends JPanel {
     private int iMausePX = 0;
     private int iMausePY = 0;
     private Rectangle2D.Double rect;
+    private Zone zone = new Zone();
     private Stack<Zone> stack = new Stack<Zone>();
 
     CGraphicsDisplay() {
@@ -385,7 +387,16 @@ public class CGraphicsDisplay extends JPanel {
             }
         }
         public void mouseClicked(MouseEvent e) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            if (e.getButton() != 3)	
+                return;	
+            try {
+                zone = stack.pop();	
+            } 
+            catch (EmptyStackException err) {			
+            }
+            if (stack.empty())
+		bZoom = false;
+	repaint();
         }
 
         public void mousePressed(MouseEvent e) {
