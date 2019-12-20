@@ -399,8 +399,23 @@ public class CGraphicsDisplay extends JPanel {
 	repaint();
         }
 
-        public void mousePressed(MouseEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); 
+        public void mousePressed(MouseEvent ev) {
+            if (ev.getButton() != 1)
+                return;
+            if (graphPoint != null) {
+		bSelMode = false;
+		bDragMode = true;
+            } 
+            else {
+		bDragMode = false;
+		bSelMode = true;
+		iMausePX = ev.getX();
+		iMausePY = ev.getY();
+		if (!bClockRotate)
+                    rect.setFrame(ev.getX(), ev.getY(), 0, 0);
+		else
+		rect.setFrame(ev.getX(), ev.getY(), 0, 0);
+            }
         }
 
         public void mouseReleased(MouseEvent e) {
@@ -408,7 +423,6 @@ public class CGraphicsDisplay extends JPanel {
         }
 
         public void mouseEntered(MouseEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); 
         }
 
         public void mouseExited(MouseEvent e) {
