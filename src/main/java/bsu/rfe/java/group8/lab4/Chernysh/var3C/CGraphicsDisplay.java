@@ -15,6 +15,8 @@ import javax.swing.JPanel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.EmptyStackException;
 import java.util.Stack;
 
@@ -37,7 +39,7 @@ public class CGraphicsDisplay extends JPanel {
     }
         
     private Graph graphPoint;    
-    
+    private DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance();
     private Double[][] dArrGraphicsData;
     private Double[][] dArrSecondGraphicsData;
     private int[][] iArrGraphicsData;
@@ -59,6 +61,7 @@ public class CGraphicsDisplay extends JPanel {
     private BasicStroke axisStroke;
     private BasicStroke markerStroke;
     private BasicStroke selStroke;
+    private Font captionFont;
     private Font axisFont;
     private int iMausePX = 0;
     private int iMausePY = 0;
@@ -77,6 +80,12 @@ public class CGraphicsDisplay extends JPanel {
 	selStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, 
                         BasicStroke.JOIN_MITER, 10.0f, new float[] { 8, 8 }, 0.0f);
         axisFont = new Font("Serif", Font.BOLD, 36);
+        captionFont = new Font("Serif", Font.BOLD, 10);
+	MouseMotionHandler mouseMotionHandler = new MouseMotionHandler();
+	addMouseMotionListener(mouseMotionHandler);
+	addMouseListener(mouseMotionHandler);
+	rect = new Rectangle2D.Double();
+        zone.bUse = false;
     }
     
     void showGraphics(Double[][] graphicsData) {
@@ -114,9 +123,14 @@ public class CGraphicsDisplay extends JPanel {
             return;
         dMinX = dArrGraphicsData[0][0];
         dMaxX = dArrGraphicsData[dArrGraphicsData.length - 1][0];
+        if (zone.bUse) {
+            dMinX = zone.dMinX;
+        }
+        if (zone.bUse) {
+            dMaxX = zone.dMaxX;
+        }
         dMinY = dArrGraphicsData[0][1];
         dMaxY = dMinY;
-
         for (int i = 1; i < dArrGraphicsData.length; i++) {
             if (dArrGraphicsData[i][1] < dMinY) {
                 dMinY = dArrGraphicsData[i][1];
@@ -125,6 +139,13 @@ public class CGraphicsDisplay extends JPanel {
                 dMaxY = dArrGraphicsData[i][1];
             }
         }
+        if (zone.bUse) {
+           dMinY = zone.dMinY; 
+        } 
+        if (zone.bUse) {
+            dMaxY = zone.dMaxY;
+        }
+        
         if (bOneMoreGraph) {
             for (int i = 1; i < dArrSecondGraphicsData.length; i++) {
                 if (dArrSecondGraphicsData[i][1] < dMinY) {
@@ -156,8 +177,9 @@ public class CGraphicsDisplay extends JPanel {
             dMaxY += yIncrement;
             dMinY -= yIncrement;
         }
-        if (dScale == dScaleY) {
-            double xIncrement = 0;
+        if (!bZoom) {
+            if (dScale == dScaleY) {
+                double xIncrement = 0;
             if (!bClockRotate) {
                 xIncrement = (getSize().getWidth() / dScale - (dMaxX - dMinX)) / 2;
             }
@@ -166,6 +188,7 @@ public class CGraphicsDisplay extends JPanel {
             }
             dMaxX += xIncrement;
             dMinX -= xIncrement;
+            }
         }
 
         Graphics2D canvas = (Graphics2D) g;
@@ -188,6 +211,8 @@ public class CGraphicsDisplay extends JPanel {
             canvas.setStroke(selStroke);
             canvas.draw(rect);
 	}
+	if (graphPoint != null)
+            paintHint(canvas);
                 
         paintGraphics(canvas);
         
@@ -197,12 +222,49 @@ public class CGraphicsDisplay extends JPanel {
         canvas.setStroke(oldStroke);
     }
     
+    protected void paintHint(Graphics2D canvas) {
+	Color oldColor = canvas.getColor();
+	canvas.setColor(Color.MAGENTA);
+	StringBuffer label = new StringBuffer();
+	label.append("X=");
+	label.append(formatter.format((graphPoint.dX)));
+	label.append(", Y=");
+	label.append(formatter.format((graphPoint.dY)));
+	FontRenderContext context = canvas.getFontRenderContext();
+	Rectangle2D bounds = captionFont.getStringBounds(label.toString(),context);
+        if (!bClockRotate) {
+            int dy = -10;
+            int dx = +7;
+            if (graphPoint.iY < bounds.getHeight())
+                dy = +13;
+            if (getWidth() < bounds.getWidth() + graphPoint.iX + 20)
+                dx = -(int) bounds.getWidth() - 15;
+            canvas.drawString (label.toString(), graphPoint.iX + dx, graphPoint.iY + dy);
+        }
+        else {
+            int dy = 10;
+            int dx = -7;
+            if (graphPoint.iX < 10)
+                dx = +13;
+            if (graphPoint.iY < bounds.getWidth() + 20)
+                dy = -(int) bounds.getWidth() - 15;
+            canvas.drawString (label.toString(), getHeight() - graphPoint.iY + dy, graphPoint.iX + dx);
+            }
+	canvas.setColor(oldColor);
+    }
+    
     private void paintSecondGraphics(Graphics2D canvas) {
         canvas.setStroke(graphicsStroke);
         canvas.setColor(Color.RED);
         GeneralPath graphics = new GeneralPath();
         for (int i = 0; i < dArrSecondGraphicsData.length; i++) {
             Point2D.Double point = xyToPoint(dArrSecondGraphicsData[i][0], dArrSecondGraphicsData[i][1]);
+            iArrGraphicsData[dArrSecondGraphicsData.length + i][0] = (int) point.getX();
+            iArrGraphicsData[dArrSecondGraphicsData.length + i][1] = (int) point.getY();
+            if (bClockRotate) {
+		iArrGraphicsData[dArrSecondGraphicsData.length + i][0] = (int) point.getY();
+		iArrGraphicsData[dArrSecondGraphicsData.length + i][1] = getHeight() - (int) point.getX();
+            }
             if (i > 0) {
                 graphics.lineTo(point.getX(), point.getY());
             } else {
@@ -218,6 +280,12 @@ public class CGraphicsDisplay extends JPanel {
         GeneralPath graphics = new GeneralPath();
         for (int i = 0; i < dArrGraphicsData.length; i++) {
             Point2D.Double point = xyToPoint(dArrGraphicsData[i][0], dArrGraphicsData[i][1]);
+            iArrGraphicsData[i][0] = (int) point.getX();
+            iArrGraphicsData[i][1] = (int) point.getY();
+            if (bClockRotate) {
+		iArrGraphicsData[i][0] = (int) point.getY();
+		iArrGraphicsData[i][1] = getHeight() - (int) point.getX();
+            }
             if (i > 0) {
                 graphics.lineTo(point.getX(), point.getY());
             } else {
@@ -315,7 +383,10 @@ public class CGraphicsDisplay extends JPanel {
     private Point2D.Double xyToPoint(double x, double y) {
         double deltaX = x - dMinX;
         double deltaY = dMaxY - y;
-        return new Point2D.Double(deltaX * dScale, deltaY * dScale);
+        if(!bZoom)
+            return new Point2D.Double(deltaX * dScale, deltaY * dScale);
+	else
+            return new Point2D.Double(deltaX * dScaleX, deltaY * dScaleY);
     }
 
     private Point2D.Double shiftPoint(Point2D.Double src, double deltaX, double deltaY) {
@@ -369,25 +440,45 @@ public class CGraphicsDisplay extends JPanel {
             repaint();
             }
             if (bDragMode) {
-                if (!bClockRotate) {
-                    if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y > dMinY) {
-			dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
-			graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
-			graphPoint.iY = ev.getY();
+                if (!bOneMoreGraph) {
+                    if (!bClockRotate) {
+                        if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y > dMinY) {
+                            dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.iY = ev.getY();
+                        }
+                    } 
+                    else {
+                        if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y> dMinY) {
+                            dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.iY = ev.getX();
+                        }
                     }
-		} 
+                }
                 else {
-                    if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y> dMinY) {
-			dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
-			graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
-			graphPoint.iY = ev.getX();
+                    if (!bClockRotate) {
+                        if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y > dMinY) {
+                            dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+                            dArrSecondGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.iY = ev.getY();
+                        }
+                    } 
+                    else {
+                        if (pointToXY(ev.getX(), ev.getY()).y < dMaxY && pointToXY(ev.getX(), ev.getY()).y> dMinY) {
+                            dArrGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.dY = pointToXY(ev.getX(), ev.getY()).y;
+                            dArrSecondGraphicsData[graphPoint.iNumb][1] = pointToXY(ev.getX(), ev.getY()).y;
+                            graphPoint.iY = ev.getX();
+                        }
                     }
-		}
+                }
 		repaint();
             }
         }
-        public void mouseClicked(MouseEvent e) {
-            if (e.getButton() != 3)	
+        public void mouseClicked(MouseEvent ev) {
+            if (ev.getButton() != 3)	
                 return;	
             try {
                 zone = stack.pop();	
@@ -475,32 +566,59 @@ public class CGraphicsDisplay extends JPanel {
         }
 
         public void mouseExited(MouseEvent e) {
-            throw new UnsupportedOperationException("Not supported yet.");
         }
         
         private Graph findDot (int x, int y) {
             Graph graph1 = new Graph();
             Graph graph2 = new Graph();
             double r, r2 = 1000;
-            for (int i = 0; i < dArrGraphicsData.length; i++) {
-		Point p = new Point();
-		p.x = x;
-		p.y = y;
-		Point p2 = new Point();
-		p2.x = iArrGraphicsData[i][0];
-		p2.y = iArrGraphicsData[i][1];
-		r = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
-                if (r < 7.0) {
-                    graph1.iX = iArrGraphicsData[i][0];
-                    graph1.iY = iArrGraphicsData[i][1];
-                    graph1.dX = iArrGraphicsData[i][0];
-                    graph1.dY = iArrGraphicsData[i][1];
-                    graph1.iNumb = i;
-                    if (r < r2) {
-                        r2 = r;
-                        graph2 = graph1;
+            int iLength;
+            if (!bOneMoreGraph) {
+                iLength = dArrGraphicsData.length;
+                for (int i = 0; i < iLength; i++) {
+                    Point p = new Point();
+                    p.x = x;
+                    p.y = y;
+                    Point p2 = new Point();
+                    p2.x = iArrGraphicsData[i][0];
+                    p2.y = iArrGraphicsData[i][1];
+                    r = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
+                    if (r < 7.0) {
+                        graph1.iX = iArrGraphicsData[i][0];
+                        graph1.iY = iArrGraphicsData[i][1];
+                        graph1.dX = iArrGraphicsData[i][0];
+                        graph1.dY = iArrGraphicsData[i][1];
+                        graph1.iNumb = i;
+                        if (r < r2) {
+                            r2 = r;
+                            graph2 = graph1;
+                        }
+                        return graph2;
                     }
-                    return graph2;
+                }
+            }
+            else {
+                iLength = dArrGraphicsData.length + dArrSecondGraphicsData.length;
+                for (int i = 0; i < iLength; i++) {
+                    Point p = new Point();
+                    p.x = x;
+                    p.y = y;
+                    Point p2 = new Point();
+                    p2.x = iArrGraphicsData[i][0];
+                    p2.y = iArrGraphicsData[i][1];
+                    r = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
+                    if (r < 7.0) {
+                        graph1.iX = iArrGraphicsData[i][0];
+                        graph1.iY = iArrGraphicsData[i][1];
+                        graph1.dX = iArrGraphicsData[i][0];
+                        graph1.dY = iArrGraphicsData[i][1];
+                        graph1.iNumb = i;
+                        if (r < r2) {
+                            r2 = r;
+                            graph2 = graph1;
+                        }
+                        return graph2;
+                    }
                 }
             }
             return null;
